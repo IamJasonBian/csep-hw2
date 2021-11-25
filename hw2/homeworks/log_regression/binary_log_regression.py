@@ -44,7 +44,7 @@ class BinaryLogReg:
         self._lambda: float = _lambda
         # Fill in with matrix with the correct shape
         self.weight: np.ndarray = None  # type: ignore
-        self._bias = float
+        self.bias = 0
 
     @problem.tag("hw2-A")
     def mu(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -97,8 +97,8 @@ class BinaryLogReg:
 
         return sum(loss_ls)/len(loss_ls)
 
-        
-        
+
+
     @problem.tag("hw2-A")
     def gradient_J_weight(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Calculate gradient of loss J with respect to weight.
@@ -154,7 +154,9 @@ class BinaryLogReg:
         Returns:
             np.ndarray: An `(n, )` array of either -1s or 1s representing guess for each observation.
         """
-        raise NotImplementedError("Your Code Goes Here")
+        classified = self.bias + X.dot(self.weight)
+        classified = np.where(classified < 0, -1, 1)
+        return classified
 
     @problem.tag("hw2-A")
     def misclassification_error(self, X: np.ndarray, y: np.ndarray) -> float:
@@ -192,8 +194,11 @@ class BinaryLogReg:
                 n is number of observations.
             learning_rate (float, optional): Learning rate of SGD/GD algorithm.
                 Defaults to 1e-4.
+
         """
-        raise NotImplementedError("Your Code Goes Here")
+        self.weight = self.weight - learning_rate * self.gradient_J_weight(X, y)
+        self.bias = float(self.bias) - learning_rate * self.gradient_J_bias(X, y)
+
 
     @problem.tag("hw2-A", start_line=7)
     def train(
@@ -203,8 +208,8 @@ class BinaryLogReg:
         X_test: np.ndarray,
         y_test: np.ndarray,
         learning_rate: float = 1e-2,
-        epochs: int = 30,
-        batch_size: int = 100,
+        epochs: int = 100,
+        batch_size: int = 1,
     ) -> Dict[str, List[float]]:
         """Train function that given dataset X_train and y_train adjusts weights and biases of this model.
         It also should calculate misclassification error and J loss at the END of each epoch.
@@ -244,6 +249,9 @@ class BinaryLogReg:
         Note:
             - When shuffling batches/randomly choosing batches makes sure you are using RNG variable defined on the top of the file.
         """
+
+        model_type = "SGD"
+
         num_batches = int(np.ceil(len(X_train) // batch_size))
         result: Dict[str, List[float]] = {
             "train_losses": [],  # You should append to these lists
@@ -251,7 +259,34 @@ class BinaryLogReg:
             "test_losses": [],
             "test_errors": [],
         }
-        raise NotImplementedError("Your Code Goes Here")
+
+
+        current_epoch = 0
+        self.weight = np.zeros(X_train.shape[1])
+
+        while current_epoch < epochs:
+
+            if model_type == "SGD":
+                # Calculate Batch_index
+                batch_key = range(len(X_train))
+                batch_key = np.random.choice(len(X_train), num_batches)
+
+                X_train = X_train[batch_key]
+                y_train = y_train[batch_key]
+            else:
+                pass
+
+            print(current_epoch)
+            current_epoch = current_epoch + 1
+            self.step(X_train, y_train, learning_rate)
+
+            result["train_losses"].append(self.loss(X_train, y_train))
+            result["train_errors"].append(self.misclassification_error(X_train, y_train))
+            result["test_losses"].append(self.loss(X_test, y_test))
+            result["test_errors"].append(self.misclassification_error(X_test, y_test))
+
+        return result
+
 
 
 if __name__ == "__main__":

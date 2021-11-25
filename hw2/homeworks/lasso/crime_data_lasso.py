@@ -6,6 +6,7 @@ else:
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from utils import load_dataset, problem
 
@@ -33,6 +34,7 @@ def se(actual, pred):
     return np.square(np.subtract(actual, pred))
 
 
+
 @problem.tag("hw2-A", start_line=3)
 def main():
     # df_train and df_test are pandas dataframes.
@@ -47,12 +49,22 @@ def main():
     df_test_target = df_test['ViolentCrimesPerPop']
     df_test_observations = df_test.drop('ViolentCrimesPerPop', 1)
 
+    #Get all columns
+    all_col = df_train_observations.columns.values.tolist()
+
     lambda_init = init_lambda(df_train_target, df_train_observations)
 
     non_zero_ls = []
     lambda_ls = []
     train_mse_ls = []
     test_mse_ls = []
+
+    #plots for regularization paths
+    Regularization_plot_ls = ["agePct12t29", "pctWSocSec", "pctUrban", "agePct65up", "householdsize"]
+    Regularization_indexes = [all_col.index(item) for item in Regularization_plot_ls]
+    Regularization_plot_results = []
+
+
 
 
     while lambda_init > 0.01:
@@ -76,12 +88,35 @@ def main():
         test_mse_ls.append(test_mse)
 
 
+        #store regularization paths
+
+        reg_ls = []
+        for i in Regularization_indexes:
+            beta = df_train_model[i]
+            reg_ls.append(beta)
+
+        Regularization_plot_results.append(reg_ls)
+
+
+
+    mse_df = pd.DataFrame({'train_mse': train_mse_ls, 'test_mse':test_mse_ls})
     df = pd.DataFrame({'lambda': lambda_ls, 'count_non_zero':non_zero_ls})
-    print(df)
+    reg_df = pd.DataFrame(Regularization_plot_results, columns=Regularization_plot_ls)
+
+    #print(df)
+    #print(reg_df)
+
+    #mse.to_csv('mse.csv')
+    #df.to_csv('model_debug.csv')
+    #reg_df.to_csv('Reg_df.csv')
 
 
+    #plt.plot(df)
+    #plt.plot(reg_df)
 
+    weight_30, bias_30 = train(df_train_observations.to_numpy(), df_train_target.to_numpy(), 30)
 
+    print("Finished")
 
 if __name__ == "__main__":
     main()
